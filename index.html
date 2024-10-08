@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Key & Cigarette Classifier</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .center-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            width: 80%;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        #webcam-container, #label-container {
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .title {
+            width: 100%;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4a90e2;
+            text-transform: uppercase;
+        }
+        #webcam-container canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            color: #fff;
+            background-color: #4a90e2;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #357ab8;
+        }
+        #label-container div {
+            font-size: 1.2rem;
+            color: #555;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f7f9fc;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body>
+    <div class="center-container">
+        <div class="title">car key & cigarette classifier</div>
+        <button type="button" onclick="init()">Start</button>
+        <div id="webcam-container"></div>
+        <div id="label-container"></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script type="text/javascript">
+        const URL = "./my_model/";
+
+        let model, webcam, labelContainer, maxPredictions;
+
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+        
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+        
+            const flip = true;
+            const width = 640; 
+            const height = 480; 
+            webcam = new tmImage.Webcam(width, height, flip);
+            await webcam.setup({ facingMode: "environment" });
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+        
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) { 
+                labelContainer.appendChild(document.createElement("div"));
+            }
+        }
+
+        async function loop() {
+            webcam.update();
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            if (prediction[0].className == "car key" && prediction[0].probability.toFixed(2) >= 0.95) {
+                labelContainer.childNodes[0].innerHTML = "예솔아, 차키 챙겨라. 배에서 3/O는 선임들의 물건을 잘 챙겨야 하는 법이지. 우선 체크리스트에 따라 차키는 지정된 장소에 보관해야 하고, 배터리 잔량을 항상 확인해서 언제나 사용할 수 있는 상태로 두어야 해.";
+            } else if (prediction[1].className == "cigarette" && prediction[1].probability.toFixed(2) >= 0.95) {
+                labelContainer.childNodes[0].innerHTML = "윤서야, 담배 가져가. 담배는 건강에 해롭지만 니가 꼭 피워야 하겠다면, 말리지 않겠어. 담배는 서늘한 곳에 보관하도록 하고, 다 피운 후에는 재떨이에 버리도록 하렴. 니코틴 파워 충전!!!";
+            } else {
+                labelContainer.childNodes[0].innerHTML = "영준아, 너는 뭐 두고 가는 거 없냐? 항상 준비해야 할 물품을 빠뜨리지 않았는지 점검하고, 3/O의 덕목인 멘탈을 잘 챙기도록 하렴. 여친은 어차피 육상에서 딴 남자 만나고 있을거야.ㅋㅋㅋ"
+            }
+        }
+    </script>
+</body>
+</html>
